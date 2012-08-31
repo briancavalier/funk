@@ -1,0 +1,16 @@
+{
+  "name": "fn",
+  "description": "The best project ever.",
+  "homepage": "",
+  "version": "0.1.0",
+  "keywords": [],
+  "devDependencies": {
+    "buster": "",
+    "grunt-buster": "",
+    "grunt-css": "",
+    "grunt-html": "",
+    "express": "",
+    "json5": ""
+  },
+  "main": "fn"
+}
