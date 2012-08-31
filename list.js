@@ -16,7 +16,7 @@ define(function() {
 		partition: partition,
 		collate: collate,
 		flatten: flatten,
-		
+
 		zipWith: zipWith,
 		zip: zip
 	};
@@ -134,7 +134,7 @@ define(function() {
 	function flatten(arr, recurse) {
 		var doFlatten = recurse
 			? function(result, a) {
-				if(a instanceof Array) {
+				if(Array.isArray(a)) {
 					result = result.concat(doFlatten(a));
 				} else {
 					result.push(a);
