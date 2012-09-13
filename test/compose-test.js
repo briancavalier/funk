@@ -35,5 +35,16 @@ buster.testCase('compose', {
 		}
 
 		compose(checkArgs).apply(null, expected);
+	},
+
+	'should compose f, g into g(f)': function() {
+		function appendA(x) {
+			return x + 'a';
+		}
+		function appendB(x) {
+			return x + 'b';
+		}
+
+		assert.equals(compose(appendA, appendB)(''), 'ab');
 	}
 });

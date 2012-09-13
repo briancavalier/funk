@@ -1,15 +1,13 @@
 (function(define) {
 define(function() {
 
-	var slice;
-
-	slice = Array.prototype.slice;
+	var slice = Array.prototype.slice;
 
 	return {
 		forEach: forEach,
 		reduce: reduce,
 		map: map,
-
+		filter: filter,
 		first: first,
 		last: last,
 		
@@ -18,66 +16,28 @@ define(function() {
 		flatten: flatten,
 
 		zipWith: zipWith,
-		zip: zip
+		zip: zip,
+		unzip: unzip
 	};
 
 	// List operations
 
 	function forEach(fn, arr) {
-		var i, len, val;
-
-		for(i = 0, len = arr.length; i < len; i++) {
-			if(i in arr) {
-				fn(arr[i], i, arr);
-			}
-		}
+		arr.forEach(fn);
 	}
 
 	function reduce(reducer, arr /*, initialValue */) {
-		var args, reduced, len, i;
-
-		i = 0;
-		arr = Object(arr);
-		len = arr.length >>> 0;
-		args = arguments;
-
-		// If no initialValue, use first item of array (we know length !== 0 here)
-		// and adjust i to start at second item
-		if(args.length <= 1) {
-			// Skip to the first real element in the array
-			for(;;) {
-				if(i in arr) {
-					reduced = arr[i++];
-					break;
-				}
-
-				// If we reached the end of the array without finding any real
-				// elements, it's a TypeError
-				if(++i >= len) {
-					throw new TypeError();
-				}
-			}
-		} else {
-			// If initialValue provided, use it
-			reduced = args[1];
-		}
-
-		// Do the actual reduce
-		for(;i < len; ++i) {
-			// Skip holes
-			if(i in arr) {
-				reduced = reducer(reduced, arr[i], i, arr);
-			}
-		}
-
-		return reduced;
+		return arguments.length > 2
+			? arr.reduce(reducer, arguments[2])
+			: arr.reduce(reducer);
 	}
 
 	function map(mapper, arr) {
-		return reduce(function(mapped, item) {
-			mapped.push(mapper(item));
-			return mapped;
-		}, []);
+		return arr.map(mapper);
+	}
+
+	function filter(predicate, arr) {
+		return arr.filter(predicate);
 	}
 
 	function first(predicate, arr) {
@@ -87,23 +47,27 @@ define(function() {
 			if(i in arr) {
 				val = arr[i];
 				if(predicate(val)) {
-					return val;
+					break;
 				}
 			}
 		}
+
+		return val;
 	}
 
 	function last(predicate, arr) {
-		var i, len, val;
+		var i, val;
 
 		for(i = arr.length - 1; i >= 0; i--) {
 			if(i in arr) {
 				val = arr[i];
 				if(predicate(val)) {
-					return val;
+					break;
 				}
 			}
 		}
+
+		return val;
 	}
 
 	function partition(predicate, arr) {
@@ -114,9 +78,9 @@ define(function() {
 
 		arr.forEach(function(val) {
 			if(predicate(val)) {
-				a.push(val);
-			} else {
 				b.push(val);
+			} else {
+				a.push(val);
 			}
 		});
 
@@ -125,8 +89,7 @@ define(function() {
 
 	function collate(predicate, arr) {
 		return arr.reduce(function(result, a) {
-			var key = predicate(a);
-			result[key] = a;
+			result[predicate(a)] = a;
 			return result;
 		}, {});
 	}

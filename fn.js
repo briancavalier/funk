@@ -1,37 +1,58 @@
 (function(define) {
 define(function() {
 
-	var slice;
-
-	slice = Array.prototype.slice;
-
-	curry.arity = curryArity;
+	var slice = [].slice;
 
 	return {
 		identity: identity,
 		of: of,
+
 		apply: apply,
 		compose: compose,
+
 		partial: partial,
 		curry: curry,
 		curry1: curry1,
+		curryArity: curryArity,
 		uncurry: uncurry
 	};
 
+	/**
+	 * The identity function.  Always returns x
+	 * @param x {*} input arg, will be returned
+	 * @return {*} x
+	 */
 	function identity(x) {
 		return x;
 	}
 
+	/**
+	 * Create a function that always returns x
+	 * @param x {*} arg that resulting function will return
+	 * @return {Function} function that returns x
+	 */
 	function of(x) {
 		return function() {
 			return x;
 		};
 	}
 
-	function apply(f, args) {
+	/**
+	 * Apply function f to the supplied arguments
+	 * @param args
+	 * @param f
+	 * @return {*}
+	 */
+	function apply(args, f) {
 		return f.apply(this, args);
 	}
 
+	/**
+	 * Compose two or more functions
+	 * @param f {Function}
+	 * @param g {Function}
+	 * @return {Function}
+	 */
 	function compose(f, g /*, h... */) {
 		var funcs = slice.call(arguments);
 
@@ -42,7 +63,15 @@ define(function() {
 		};
 	}
 
-	function partial(f /* args... */) {
+	/**
+	 * Return a version of f that has been partially applied to the
+	 * supplied arguments. Accepts a variable number of arguments with which
+	 * to partially apply f.
+	 * @param f {Function} function to partially apply
+	 * @param arg1 {*} First of any number of arguments
+	 * @return {*}
+	 */
+	function partial(f, arg1 /*,... */) {
 		var args;
 		// Optimization: return f if no args provided
 		if (arguments.length === 1) {
@@ -109,16 +138,12 @@ define(function() {
 	}
 
 	function uncurry(f) {
-		if (typeof f != "function" || f.length === 0) {
-			return f;
-		}
-
 		return function() {
-			var i, next;
+			var i, next, len;
 			
 			next = f;
 
-			for (i = 0; i < arguments.length; i++) {
+			for (i = 0, len = arguments.length; i < len; i++) {
 				next = next(arguments[i]);
 			}
 
