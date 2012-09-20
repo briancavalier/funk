@@ -1,3 +1,12 @@
+/** @license MIT License (c) copyright B Cavalier & J Hann */
+
+/**
+ * part of the cujo.js family of libraries (http://cujojs.com/)
+ *
+ * Licensed under the MIT License at:
+ * http://www.opensource.org/licenses/mit-license.php
+ *
+ */
 (function(define) {
 define(function() {
 
@@ -54,12 +63,15 @@ define(function() {
 	 * @return {Function}
 	 */
 	function compose(f, g /*, h... */) {
-		var funcs = slice.call(arguments);
+		var head, tail;
+
+		head = f;
+		tail = slice.call(arguments, 1);
 
 		return function() {
-			return funcs.reduce(function(args, f) {
-				return [f.apply(null, args)];
-			}, slice.call(arguments))[0];
+			return tail.reduce(function(result, f) {
+				return f(result);
+			}, head.apply(null, slice.call(arguments)));
 		};
 	}
 

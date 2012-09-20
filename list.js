@@ -1,3 +1,12 @@
+/** @license MIT License (c) copyright B Cavalier & J Hann */
+
+/**
+ * part of the cujo.js family of libraries (http://cujojs.com/)
+ *
+ * Licensed under the MIT License at:
+ * http://www.opensource.org/licenses/mit-license.php
+ *
+ */
 (function(define) {
 define(function() {
 
@@ -22,20 +31,43 @@ define(function() {
 
 	// List operations
 
+	/**
+	 * Basic list iterator
+	 * @param fn {Function} function to apply to each item in arr
+	 * @param arr {Array} list of items
+	 */
 	function forEach(fn, arr) {
 		arr.forEach(fn);
 	}
 
+	/**
+	 * Standard reduce/fold in a curryable format
+	 * @param reducer {Function} reducer function to apply to each item
+	 * @param arr {Array} list of items
+	 * @return {*} reduce result
+	 */
 	function reduce(reducer, arr /*, initialValue */) {
 		return arguments.length > 2
 			? arr.reduce(reducer, arguments[2])
 			: arr.reduce(reducer);
 	}
 
+	/**
+	 * Standard map in a curryable format
+	 * @param mapper {Function} mapper function to apply to each item
+	 * @param arr {Array} list of items
+	 * @return {Array} mapped results
+	 */
 	function map(mapper, arr) {
 		return arr.map(mapper);
 	}
 
+	/**
+	 * Standard map in a curryable format
+	 * @param predicate {Function} predicate to evaluate for each item
+	 * @param arr {Array} list of items
+	 * @return {Array} array of items for which predicate evaluates to true
+	 */
 	function filter(predicate, arr) {
 		return arr.filter(predicate);
 	}
@@ -68,6 +100,46 @@ define(function() {
 		}
 
 		return val;
+	}
+
+	function some(predicate, arr) {
+		var i, len, found;
+
+		found = false;
+
+		for(i = 0, len = arr.length;i < len; i++) {
+			found = predicate(arr[i]);
+			if(found) {
+				break;
+			}
+		}
+
+		return found;
+	}
+
+
+	function whilst(predicate, arr) {
+		var i, len;
+
+		for(i = 0, len = arr.length;i < len; i++) {
+			if(!predicate(arr[i])) {
+				break;
+			}
+		}
+
+		return arr.slice(0, i);
+	}
+
+	function until(predicate, arr) {
+		var i, len;
+
+		for(i = 0, len = arr.length;i < len; i++) {
+			if(predicate(arr[i])) {
+				break;
+			}
+		}
+
+		return arr.slice(0, i);
 	}
 
 	function partition(predicate, arr) {

@@ -1,7 +1,7 @@
 var buster, assert, refute, fail, compose;
 
 buster = require('buster');
-compose = require('fn').compose;
+compose = require('../fn').compose;
 
 assert = buster.assert;
 refute = buster.refute;
