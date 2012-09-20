@@ -10,13 +10,16 @@
 (function(define) {
 define(function() {
 
+	var slice = [].slice;
+
 	return {
 		add: add,
 		remove: remove,
 		merge: merge,
 		indexOf: indexOf,
 		find: find,
-		fromArray: fromArray
+		fromArray: fromArray,
+		from: from
 	};
 
 	function fromArray(comparator, array) {
@@ -24,6 +27,10 @@ define(function() {
 		heap.sort(comparator);
 
 		return heap;
+	}
+
+	function from(comparator /* items... */) {
+		return fromArray(comparator, slice.call(arguments, 1));
 	}
 
 	function indexOf(comparator, item, heap) {

@@ -47,13 +47,13 @@ define(function() {
 	}
 
 	/**
-	 * Apply function f to the supplied arguments
-	 * @param args
-	 * @param f
-	 * @return {*}
+	 * Apply function f to x
+	 * @param x {*} value on which to apply f
+	 * @param f {Function} function to apply to x
+	 * @return {*} result of applying f to x
 	 */
-	function apply(args, f) {
-		return f.apply(this, args);
+	function apply(x, f) {
+		return f(x);
 	}
 
 	/**
@@ -69,9 +69,7 @@ define(function() {
 		tail = slice.call(arguments, 1);
 
 		return function() {
-			return tail.reduce(function(result, f) {
-				return f(result);
-			}, head.apply(null, slice.call(arguments)));
+			return tail.reduce(apply, head.apply(null, slice.call(arguments)));
 		};
 	}
 
