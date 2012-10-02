@@ -1,16 +1,12 @@
 {
-  "name": "fn",
-  "description": "The best project ever.",
+  "name": "funk",
+  "description": "Experimenting with functional programming in Javascript",
   "homepage": "",
   "version": "0.1.0",
-  "keywords": [],
+  "keywords": ["functional"],
   "devDependencies": {
     "buster": "",
     "grunt-buster": "",
-    "grunt-css": "",
-    "grunt-html": "",
-    "express": "",
-    "json5": ""
   },
   "main": "fn"
 }
