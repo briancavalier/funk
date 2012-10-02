@@ -1,16 +1,18 @@
-/** @license MIT License (c) copyright B Cavalier & J Hann */
+/** @license MIT License (c) copyright B Cavalier */
 
 /**
- * part of the cujo.js family of libraries (http://cujojs.com/)
- *
  * Licensed under the MIT License at:
  * http://www.opensource.org/licenses/mit-license.php
- *
  */
 (function(define) {
 define(function() {
 
-	var slice = [].slice;
+	var ap, apSlice, apSplice, apSort;
+
+	ap = Array.prototype;
+	apSlice = ap.slice.call.bind(ap.slice);
+	apSplice = ap.splice.call.bind(ap.splice);
+	apSort = ap.sort.call.bind(ap.sort);
 
 	return {
 		add: add,
@@ -22,15 +24,18 @@ define(function() {
 		from: from
 	};
 
-	function fromArray(comparator, array) {
-		var heap = array.slice();
-		heap.sort(comparator);
+	function fromArray(comparator, list) {
+		var heap = apSlice(list);
+		apSort(heap, comparator);
 
 		return heap;
 	}
 
 	function from(comparator /* items... */) {
-		return fromArray(comparator, slice.call(arguments, 1));
+		var heap = apSlice(arguments, 1);
+		apSort(heap, comparator);
+
+		return heap;
 	}
 
 	function indexOf(comparator, item, heap) {
@@ -50,7 +55,7 @@ define(function() {
 				return index;
 			},
 			function(item, index, heap) {
-				heap.splice(index, 0, item);
+				apSplice(heap, index, 0, item);
 				return index;
 			}
 		);
@@ -59,7 +64,7 @@ define(function() {
 	function remove(comparator, item, heap) {
 		return find(heap, item, comparator,
 			function(item, index, heap) {
-				heap.splice(index, 1);
+				apSplice(heap, index, 1);
 				return item;
 			},
 			function () {

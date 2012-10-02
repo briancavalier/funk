@@ -10,7 +10,11 @@
 (function(define) {
 define(function() {
 
-	var slice = [].slice;
+	var ap, apSlice, apReduce;
+
+	ap = Array.prototype;
+	apSlice = ap.slice.call.bind(ap.slice);
+	apReduce = ap.reduce.call.bind(ap.reduce);
 
 	return {
 		identity: identity,
@@ -63,13 +67,10 @@ define(function() {
 	 * @return {Function}
 	 */
 	function compose(f, g /*, h... */) {
-		var head, tail;
-
-		head = f;
-		tail = slice.call(arguments, 1);
+		var tail = apSlice(arguments, 1);
 
 		return function() {
-			return tail.reduce(apply, head.apply(null, slice.call(arguments)));
+			return apReduce(tail, apply, f.apply(null, apSlice(arguments)));
 		};
 	}
 
@@ -88,10 +89,10 @@ define(function() {
 			return f;
 		}
 
-		args = slice.call(arguments, 1);
+		args = apSlice(arguments, 1);
 
 		return function() {
-			return f.apply(this, args.concat(slice.call(arguments)));
+			return f.apply(this, args.concat(apSlice(arguments)));
 		};
 	}
 
@@ -122,7 +123,7 @@ define(function() {
 	 * @return {Function} curried version of fn
 	 */
 	function curry(fn /*, args... */) {
-		return curryNext(fn, fn.length, slice.call(arguments, 1));
+		return curryNext(fn, fn.length, apSlice(arguments, 1));
 	}
 
 	/**
@@ -134,12 +135,12 @@ define(function() {
 	 * @return {Function} curried version of fn
 	 */
 	function curryArity(fn, arity /*, args... */) {
-		return curryNext(fn, arity, slice.call(arguments, 2));
+		return curryNext(fn, arity, apSlice(arguments, 2));
 	}
 
 	function curryNext(fn, arity, args) {
 		return function() {
-			var accumulated = args.concat(slice.call(arguments));
+			var accumulated = args.concat(apSlice(arguments));
 
 			return accumulated.length < arity
 				? curryNext(fn, arity, accumulated)

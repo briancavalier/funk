@@ -24,6 +24,7 @@ define(function() {
 
 	return {
 		of: of,
+		generate: generate,
 
 		forEach: forEach,
 		reduce: reduce,
@@ -34,6 +35,9 @@ define(function() {
 		first: first,
 		last: last,
 		concat: concat,
+
+		head: head,
+		tail: tail,
 
 		partition: partition,
 		collate: collate,
@@ -50,8 +54,31 @@ define(function() {
 
 	// List operations
 
+	/**
+	 * Create a list from the supplied items
+	 * @param  {*} item1 first item
+	 * @return {Array} list of supplied items
+	 */
 	function of(item1 /*, item2... */) {
-		return reduce(concat, [], arguments);
+		return apSlice(arguments);
+	}
+
+	/**
+	 * Generate a new list by applying the supplied generator function
+	 * @param  {Function} generator function to apply to generate list items
+	 * @param  {Number} n number of items to generate
+	 * @return {Array} list of n items
+	 */
+	function generate(generator, n) {
+		var list, i;
+
+		list = [];
+
+		for(i = 0; i < n; i++) {
+			list.push(generator(i));
+		}
+
+		return list;
 	}
 
 	/**
@@ -84,7 +111,7 @@ define(function() {
 	}
 
 	/**
-	 * Standard map in a curryable format
+	 * Standard filter in a curryable format
 	 * @param predicate {Function} predicate to evaluate for each item
 	 * @param arr {Array} list of items
 	 * @return {Array} array of items for which predicate evaluates to true
@@ -114,8 +141,32 @@ define(function() {
 		return apEvery(arr, predicate);
 	}
 
+	/**
+	 * Concatenates the two lists into one new list
+	 * @param  {Array} head
+	 * @param  {Array} tail
+	 * @return {Array} concatenated list
+	 */
 	function concat(head, tail) {
-		return apConcat(Array.isArray(head) ? head : [head], tail);
+		return apConcat(head, tail);
+	}
+
+	/**
+	 * Returns the first element in the list
+	 * @param  {Array} list
+	 * @return {*} first element or undefined
+	 */
+	function head(list) {
+		return list[0];
+	}
+
+	/**
+	 * Returns a list of all elements except the first
+	 * @param  {Array} list
+	 * @return {Array} list of all items except the first, or empty list.
+	 */
+	function tail(list) {
+		return apSlice(list, 1);
 	}
 
 	/**
@@ -162,6 +213,17 @@ define(function() {
 		return val;
 	}
 
+	/**
+	 * Partition a list into 2 lists by evaluating the supplied
+	 * predicate on each item.  Items for which the predicate evaluates
+	 * to false will be placed in one result list, and items for which
+	 * it evaluates to true in another
+	 * @param  {Function} predicate predicate to evaluate for each item
+	 * @param  {Array} arr list to partition
+	 * @return {Array} array containing two lists, the 0th contains items
+	 * for which predicate evaluated to false, and the 1st contains items
+	 * for which it evaluated to true, e.g. [falseItems, trueItems]
+	 */
 	function partition(predicate, arr) {
 		var a, b;
 
@@ -186,19 +248,17 @@ define(function() {
 		}, {}, arr);
 	}
 
-	function flatten(arr, recurse) {
-		var doFlatten = recurse
-			? function(result, a) {
-				if(Array.isArray(a)) {
+	function flatten(arr, shallow) {
+		var doFlatten = shallow
+			? concat
+			: function (result, a) {
+				if (Array.isArray(a)) {
 					result = concat(result, doFlatten(a));
 				} else {
 					result.push(a);
 				}
 
 				return result;
-			}
-			: function(result, a) {
-				return concat(result, a);
 			};
 
 		return reduce(doFlatten, [], arr);
