@@ -34,6 +34,6 @@ module.exports = function(grunt) {
 	// Use buster for testing
 	grunt.registerTask('test', 'buster');
 
-	grunt.registerTask('default', 'test');
+	grunt.registerTask('default', 'lint test');
 
 };

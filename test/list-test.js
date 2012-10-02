@@ -10,7 +10,9 @@ fail = buster.assertions.fail;
 function isDense(arr, len) {
 	var dense, i = 0;
 
-	if(arguments.length < 2) len = arr.length;
+	if(arguments.length < 2) {
+		len = arr.length;
+	}
 	dense = arr.length === len;
 
 	if(dense) {
