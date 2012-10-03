@@ -9,35 +9,49 @@
  */
 (function(define) {
 define(function(require) {
+	/*global StopIteration: true*/
 
-	var exports, name, curryable, curry, ap, apSlice, apForEach, apMap, apReduce, apReduceRight, apFilter, apSome, apEvery, apConcat, apSort;
+	var curryable, f, curry, uncurryContext, name,
+	ap, apSlice, apForEach, apMap, apReduce, apReduceRight,
+	apFilter, apSome, apEvery, apConcat, apSort, apJoin,
+	stopIteration;
+
+	f = require('./fn');
 
 	// Most every exported function will be curried
-	curry = require('./fn').curry;
+	curry = f.curry;
+	uncurryContext = f.uncurryContext;
+
+	stopIteration = typeof StopIteration != 'undefined' ? StopIteration : {};
 
 	// Borrow a bunch of stuff from Array
 	ap = Array.prototype;
-	apSlice = ap.slice.call.bind(ap.slice);
-	apForEach = ap.forEach.call.bind(ap.forEach);
-	apMap = ap.map.call.bind(ap.map);
-	apReduce = ap.reduce.call.bind(ap.reduce);
-	apReduceRight = ap.reduceRight.call.bind(ap.reduceRight);
-	apFilter = ap.filter.call.bind(ap.filter);
-	apSome = ap.some.call.bind(ap.some);
-	apEvery = ap.every.call.bind(ap.every);
-	apConcat = ap.concat.call.bind(ap.concat);
-	apSort = ap.sort.call.bind(ap.sort);
+	apSlice = uncurryContext(ap.slice);
+	apForEach = uncurryContext(ap.forEach);
+	apMap = uncurryContext(ap.map);
+	apReduce = uncurryContext(ap.reduce);
+	apReduceRight = uncurryContext(ap.reduceRight);
+	apFilter = uncurryContext(ap.filter);
+	apSome = uncurryContext(ap.some);
+	apEvery = uncurryContext(ap.every);
+	apConcat = uncurryContext(ap.concat);
+	apSort = uncurryContext(ap.sort);
+	apJoin = uncurryContext(ap.join);
 
-	exports = {
-		of: of,
-
-		zip: zip,
-		zipWith: zipWith,
-		unzip: unzip
-	};
+	createList.len = len;
+	createList.zip = zip;
+	createList.zipWith = zipWith;
+	createList.unzip = unzip;
 
 	curryable = {
+		compare: compare,
 		generate: generate,
+
+		cons: cons,
+		head: head,
+		tail: tail,
+		initial: initial,
+		last: last,
 
 		forEach: forEach,
 		map: map,
@@ -45,15 +59,16 @@ define(function(require) {
 		filter: filter,
 		some: some,
 		every: every,
-		first: first,
-		last: last,
+		indexOf: indexOf,
+		lastIndexOf: lastIndexOf,
+		findFirst: findFirst,
+		findLast: findLast,
 		concat: concat,
 
 		fold: fold,
 		fold1: fold1,
 		foldr: foldr,
 		foldr1: foldr1,
-
 		unfold: unfold,
 
 		scan: scan,
@@ -64,12 +79,10 @@ define(function(require) {
 		sort: sort,
 		unique: unique,
 
-		head: head,
-		tail: tail,
-		// TODO:
-		// front or initial - return all items but last
-		// end - return last item
-		// length - return length
+		take: take,
+		takeWhile: takeWhile,
+		drop: drop,
+		dropWhile: dropWhile,
 
 		partition: partition,
 		collate: collate,
@@ -77,18 +90,14 @@ define(function(require) {
 
 		shuffle: shuffle,
 		sample: sample,
-		randomSample: randomSample,
-
-		zipWith: zipWith,
-		zip: zip,
-		unzip: unzip
+		randomSample: randomSample
 	};
 
 	for(name in curryable) {
-		exports[name] = curry(curryable[name]);
+		createList[name] = curry(curryable[name]);
 	}
 
-	return exports;
+	return createList;
 
 	// List operations
 
@@ -97,7 +106,7 @@ define(function(require) {
 	 * @param  {*} item1 first item
 	 * @return {Array} list of supplied items
 	 */
-	function of(item1 /*, item2... */) {
+	function createList(item1 /*, item2... */) {
 		return apSlice(arguments);
 	}
 
@@ -117,6 +126,21 @@ define(function(require) {
 		}
 
 		return list;
+	}
+
+	function len(list) {
+		return list.length;
+	}
+
+	function compare(fn, a, b) {
+		var ac, bc;
+
+		ac = fn(a);
+		bc = fn(b);
+
+		return ac === bc ? 0
+			: ac < bc ? -1
+				: 1;
 	}
 
 	/**
@@ -341,6 +365,27 @@ define(function(require) {
 	}
 
 	/**
+	 * Join items from list together to form a String using the
+	 * supplied separator String between each item
+	 * @param  {String|Object} separator String to place between each item
+	 * @param  {Array} list list to join
+	 * @return {String} joined String
+	 */
+	function join(separator, list) {
+		return apJoin(separator, list);
+	}
+
+	/**
+	 * Prepends item to list
+	 * @param  {*} item to prepend
+	 * @param  {Array} list onto which to prepend item
+	 * @return {Array} new list with item prepended
+	 */
+	function cons(item, list) {
+		return concat(createList(item), list);
+	}
+
+	/**
 	 * Returns the first element in the list
 	 * @param  {Array} list
 	 * @return {*} first element or undefined
@@ -359,47 +404,117 @@ define(function(require) {
 	}
 
 	/**
-	 * Returns the first item in arr for which predicate evaluates to true
-	 * @param predicate {Function} predicate to evaluate for each item
-	 * @param arr {Array} items to scan
-	 * @return {*} first item for which predicate evaluated to true or
-	 * undefined if none.
+	 * Returns a list of all elements except the last
+	 * @param  {Array} list
+	 * @return {Array} list of all items except the lsat, or empty list
 	 */
-	function first(predicate, arr) {
-		var i, len, val;
-
-		for(i = 0, len = arr.length; i < len; i++) {
-			if(i in arr) {
-				val = arr[i];
-				if(predicate(val)) {
-					break;
-				}
-			}
-		}
-
-		return val;
+	function initial(list) {
+		return apSlice(list, 0, length(list) - 1);
 	}
 
 	/**
-	 * Returns the last item in arr for which predicate evaluates to true
+	 * Returns the last element in the list
+	 * @param  {Array} list
+	 * @return {*} last element or undefined
+	 */
+	function last(list) {
+		return list[length(list) - 1];
+	}
+
+	/**
+	 * Returns a list of the first n elements of list, or list if
+	 * n > length(list).  Original list is not modified
+	 * @param  {Number} n number of elements to take
+	 * @param  {Array} list list from which to take
+	 * @return {Array} list of n elements from list
+	 */
+	function take(n, list) {
+		return apSlice(list, 0, n);
+	}
+
+	function takeWhile(predicate, list) {
+		var index = indexOf(predicate, list);
+		return index >= 0 ? apSlice(list, 0, index) : apSlice(list);
+	}
+
+	function drop(n, list) {
+		return apSlice(list, n);
+	}
+
+	function dropWhile(predicate, list) {
+		var index = indexOf(predicate, list);
+		return index >= 0 ? apSlice(list, index) : [];
+	}
+
+	/**
+	 * Returns the first item in list for which predicate evaluates to true
 	 * @param predicate {Function} predicate to evaluate for each item
-	 * @param arr {Array} items to scan
+	 * @param list {Array} items to scan
+	 * @return {*} first item for which predicate evaluated to true or
+	 * undefined if none.
+	 */
+	function findFirst(predicate, list) {
+		return list[indexOf(predicate, list)];
+	}
+
+	/**
+	 * Returns the last item in list for which predicate evaluates to true
+	 * @param predicate {Function} predicate to evaluate for each item
+	 * @param list {Array} items to scan
 	 * @return {*} last item for which predicate evaluated to true or
 	 * undefined if none.
 	 */
-	function last(predicate, arr) {
-		var i, val;
+	function findLast(predicate, list) {
+		return list[lastIndexOf(predicate, list)];
+	}
 
-		for(i = arr.length - 1; i >= 0; i--) {
-			if(i in arr) {
-				val = arr[i];
-				if(predicate(val)) {
-					break;
+	/**
+	 * Returns the index of the first item in list for which predicate
+	 * evaluates to true.
+	 * @param  {Function} predicate predicate to evaluate for each item
+	 * @param  {Array} list items to scan
+	 * @return {Number} index of first item for which predicate evaluates
+	 *  to true, or -1 if none.
+	 */
+	function indexOf(predicate, list) {
+		var index = -1;
+		apSome(list, function(item, i) {
+			if(predicate(item)) {
+				index = i;
+				return true;
+			}
+
+			return false;
+		});
+
+		return index;
+	}
+
+	/**
+	 * Returns the index of the last item in list for which predicate
+	 * evaluates to true.
+	 * @param  {Function} predicate predicate to evaluate for each item
+	 * @param  {Array} list items to scan
+	 * @return {Number} index of last item for which predicate evaluates
+	 *  to true, or -1 if none.
+	 */
+	function lastIndexOf(predicate, list) {
+		var index = -1;
+
+		try {
+			apReduceRight(list, function(unused, item, i) {
+				if(predicate(item)) {
+					index = i;
+					throw stopIteration;
 				}
+			});
+		} catch(e) {
+			if(e !== stopIteration) {
+				throw e;
 			}
 		}
-
-		return val;
+		
+		return index;
 	}
 
 	/**

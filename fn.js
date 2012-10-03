@@ -13,8 +13,8 @@ define(function() {
 	var ap, apSlice, apReduce;
 
 	ap = Array.prototype;
-	apSlice = ap.slice.call.bind(ap.slice);
-	apReduce = ap.reduce.call.bind(ap.reduce);
+	apSlice = uncurryContext(ap.slice);
+	apReduce = uncurryContext(ap.reduce);
 
 	return {
 		identity: identity,
@@ -25,9 +25,9 @@ define(function() {
 
 		partial: partial,
 		curry: curry,
-		curry1: curry1,
+		curryr: curryr,
 		curryArity: curryArity,
-		uncurry: uncurry
+		uncurryContext: uncurryContext
 	};
 
 	/**
@@ -97,27 +97,6 @@ define(function() {
 	}
 
 	/**
-	 * Curry an N-argument function to a series of single argument (pure) functions
-	 * @param  {Function} fn Function to curry
-	 * @return {Function} curried version of fn
-	 */
-	function curry1(fn) {
-		var arity = fn.length;
-
-		return arity > 1 ? curry1Next(fn, arity, []) : fn;
-	}
-
-	function curry1Next(fn, arity, args) {
-		return function(x) {
-			var accumulated = args.concat(x);
-
-			return accumulated.length < arity
-				? curry1Next(fn, arity, accumulated)
-				: fn.apply(this, accumulated);
-		};
-	}
-
-	/**
 	 * Curry an N-argument function to a series of less-than-N-argument functions
 	 * @param  {Function} fn Function to curry
 	 * @return {Function} curried version of fn
@@ -146,6 +125,24 @@ define(function() {
 				? curryNext(fn, arity, accumulated)
 				: fn.apply(this, accumulated);
 		};
+	}
+
+	function curryr(fn /*, args... */) {
+		return curryrNext(fn, fn.length, apSlice(arguments, 1));
+	}
+
+	function curryrNext(fn, arity, args) {
+		return function() {
+			var accumulated = apSlice(arguments).concat(args);
+
+			return accumulated.length < arity
+				? curryNext(fn, arity, accumulated)
+				: fn.apply(this, accumulated);
+		};
+	}
+
+	function uncurryContext(fn) {
+		return fn.call.bind(fn);
 	}
 
 	function uncurry(f) {

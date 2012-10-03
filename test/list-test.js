@@ -32,11 +32,109 @@ testArray = (function(n) {
 
 buster.testCase('list', {
 
+	'list': {
+		'should create an empty list': function() {
+			assert.equals(list(), []);
+		},
+
+		'should create a list': function() {
+			assert.equals(list(1, 2, 3), [1, 2, 3]);
+		}
+	},
+
+	'generate': {
+		'should generate n items': function() {
+			assert.equals(list.generate(function(i) { return i; }, 3), [0, 1, 2]);
+		}
+	},
+
+	'compare': {
+		'should apply function to both': function() {
+			var c = list.compare(function(x) { return -x; });
+			assert.equals(c(1, -1), -1);
+		}
+	},
+
+	'length': {
+		'should return array length': function() {
+			assert.equals(3, list.len([1, 2, 3]));
+		},
+
+		'should return array-like length': function() {
+			assert.equals(3, list.len({ length: 3 }));
+		},
+
+		'should return string length': function() {
+			assert.equals(3, list.len('123'));
+		}
+	},
+
+	'cons': {
+		'should return list when non-list input': function() {
+			assert.equals(list.cons(1, 2), [1, 2]);
+		},
+
+		'should return list when empty list input': function() {
+			assert.equals(list.cons(1, []), [1]);
+		},
+
+		'should return list': function() {
+			assert.equals(list.cons(1, [2, 3, 4]), [1, 2, 3, 4]);
+		}
+	},
+
+	'head': {
+		'should return undefined when input is empty': function() {
+			refute.defined(list.head([]));
+		},
+
+		'should return first element': function() {
+			assert.equals(list.head([1, 2, 3]), 1);
+		}
+	},
+
+	'tail': {
+		'should return empty list when input is empty': function() {
+			assert.equals(list.len(list.tail([])), 0);
+		},
+
+		'should return empty list when input length is 1': function() {
+			assert.equals(list.len(list.tail([1])), 0);
+		},
+
+		'should return all but first item': function() {
+			assert.equals(list.tail([1, 2, 3]), [2, 3]);
+		}
+	},
+
+	'last': {
+		'should return undefined when input is empty': function() {
+			refute.defined(list.last([]));
+		},
+
+		'should return first element': function() {
+			assert.equals(list.last([1, 2, 3]), 3);
+		}
+	},
+
+	'initial': {
+		'should return empty list when input is empty': function() {
+			assert.equals(list.len(list.initial([])), 0);
+		},
+
+		'should return empty list when input length is 1': function() {
+			assert.equals(list.len(list.initial([1])), 0);
+		},
+
+		'should return all but last item': function() {
+			assert.equals(list.initial([1, 2, 3]), [1, 2]);
+		}
+	},
+
 	'shuffle': {
 		'should return a dense list of the same size': function() {
 			assert(isDense(list.shuffle(testArray)));
 		}
-
 	},
 
 	'sample': {
