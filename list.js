@@ -10,7 +10,7 @@
 (function(define) {
 define(function(require) {
 
-	var exports, name, curryable, curry, ap, apSlice, apForEach, apMap, apReduce, apReduceRight, apFilter, apSome, apEvery, apConcat;
+	var exports, name, curryable, curry, ap, apSlice, apForEach, apMap, apReduce, apReduceRight, apFilter, apSome, apEvery, apConcat, apSort;
 
 	// Most every exported function will be curried
 	curry = require('./fn').curry;
@@ -26,6 +26,7 @@ define(function(require) {
 	apSome = ap.some.call.bind(ap.some);
 	apEvery = ap.every.call.bind(ap.every);
 	apConcat = ap.concat.call.bind(ap.concat);
+	apSort = ap.sort.call.bind(ap.sort);
 
 	exports = {
 		of: of,
@@ -60,8 +61,15 @@ define(function(require) {
 		scanr: scanr,
 		scanr1: scanr1,
 
+		sort: sort,
+		unique: unique,
+
 		head: head,
 		tail: tail,
+		// TODO:
+		// front or initial - return all items but last
+		// end - return last item
+		// length - return length
 
 		partition: partition,
 		collate: collate,
@@ -264,6 +272,41 @@ define(function(require) {
 	 */
 	function filter(predicate, arr) {
 		return apFilter(arr, predicate);
+	}
+
+	/**
+	 * Returns a sorted copy of the input list using the supplied comparator
+	 * for sorting.
+	 * @param  {Function} comparator sort compare function
+	 * @param  {Array} list list of items to be sorted
+	 * @return {Array} sorted copy of the list
+	 */
+	function sort(comparator, list) {
+		return apSort(apSlice(list), comparator);
+	}
+
+	/**
+	 * Returns a copy of the sortedList with adjacent duplicates removed
+	 * @param  {Function} comparator function that must return 0 for duplicate items
+	 * @param  {Array} sortedList sorted list
+	 * @return {Array} sorted copy with adjacent duplicates removed
+	 */
+	function unique(comparator, sortedList) {
+		var prev;
+
+		return fold(function(uniq, item, i) {
+			if(uniq.length === 0) {
+				uniq.push(item);
+			} else if(comparator(item, prev) !== 0) {
+				uniq.push(item);
+			}
+
+			prev = item;
+
+			return uniq;
+
+		}, [], sortedList);
+
 	}
 
 	/**
