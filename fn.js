@@ -1,11 +1,8 @@
-/** @license MIT License (c) copyright B Cavalier & J Hann */
+/** @license MIT License (c) copyright B Cavalier */
 
 /**
- * part of the cujo.js family of libraries (http://cujojs.com/)
- *
  * Licensed under the MIT License at:
  * http://www.opensource.org/licenses/mit-license.php
- *
  */
 (function(define) {
 define(function() {
