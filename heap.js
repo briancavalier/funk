@@ -5,24 +5,35 @@
  * http://www.opensource.org/licenses/mit-license.php
  */
 (function(define) {
-define(function() {
+define(function(require) {
 
-	var ap, apSlice, apSplice, apSort;
+	var exports, name, curryable, curry, ap, apSlice, apSplice, apSort;
+
+	curry = require('./fn').curry;
 
 	ap = Array.prototype;
 	apSlice = ap.slice.call.bind(ap.slice);
 	apSplice = ap.splice.call.bind(ap.splice);
 	apSort = ap.sort.call.bind(ap.sort);
 
-	return {
-		add: add,
-		remove: remove,
-		merge: merge,
-		indexOf: indexOf,
-		find: find,
-		fromArray: fromArray,
+	exports = {
 		from: from
 	};
+
+	curryable = {
+		fromArray: fromArray,
+		indexOf: indexOf,
+		find: find,
+		add: add,
+		remove: remove,
+		merge: merge
+	};
+
+	for(name in curryable) {
+		exports[name] = curry(curryable[name]);
+	}
+
+	return exports;
 
 	function fromArray(comparator, list) {
 		var heap = apSlice(list);
@@ -32,10 +43,12 @@ define(function() {
 	}
 
 	function from(comparator /* items... */) {
-		var heap = apSlice(arguments, 1);
-		apSort(heap, comparator);
+		// Must be manually curried since it accepts varargs
+		function fromItems() {
+			return fromArray(comparator, arguments);
+		}
 
-		return heap;
+		return arguments.length === 1 ? fromItems : fromItems.apply(null, apSlice(arguments, 1));
 	}
 
 	function indexOf(comparator, item, heap) {

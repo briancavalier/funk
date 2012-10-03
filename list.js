@@ -8,33 +8,57 @@
  *
  */
 (function(define) {
-define(function() {
+define(function(require) {
 
-	var ap, apSlice, apForEach, apMap, apReduce, apFilter, apSome, apEvery, apConcat;
+	var exports, name, curryable, curry, ap, apSlice, apForEach, apMap, apReduce, apReduceRight, apFilter, apSome, apEvery, apConcat;
 
+	// Most every exported function will be curried
+	curry = require('./fn').curry;
+
+	// Borrow a bunch of stuff from Array
 	ap = Array.prototype;
 	apSlice = ap.slice.call.bind(ap.slice);
 	apForEach = ap.forEach.call.bind(ap.forEach);
 	apMap = ap.map.call.bind(ap.map);
 	apReduce = ap.reduce.call.bind(ap.reduce);
+	apReduceRight = ap.reduceRight.call.bind(ap.reduceRight);
 	apFilter = ap.filter.call.bind(ap.filter);
 	apSome = ap.some.call.bind(ap.some);
 	apEvery = ap.every.call.bind(ap.every);
 	apConcat = ap.concat.call.bind(ap.concat);
 
-	return {
+	exports = {
 		of: of,
+
+		zip: zip,
+		zipWith: zipWith,
+		unzip: unzip
+	};
+
+	curryable = {
 		generate: generate,
 
 		forEach: forEach,
-		reduce: reduce,
 		map: map,
+		reduce: fold,
 		filter: filter,
 		some: some,
 		every: every,
 		first: first,
 		last: last,
 		concat: concat,
+
+		fold: fold,
+		fold1: fold1,
+		foldr: foldr,
+		foldr1: foldr1,
+
+		unfold: unfold,
+
+		scan: scan,
+		scan1: scan1,
+		scanr: scanr,
+		scanr1: scanr1,
 
 		head: head,
 		tail: tail,
@@ -51,6 +75,12 @@ define(function() {
 		zip: zip,
 		unzip: unzip
 	};
+
+	for(name in curryable) {
+		exports[name] = curry(curryable[name]);
+	}
+
+	return exports;
 
 	// List operations
 
@@ -91,13 +121,129 @@ define(function() {
 	}
 
 	/**
-	 * Standard reduce/fold in a curryable format
+	 * Standard fold
+	 * @param reducer {Function} reducer function to apply to each item
+	 * @param {*} initialValue initial value for fold
+	 * @param arr {Array} list of items
+	 * @return {*} fold result
+	 */
+	function fold(reducer, initialValue, arr) {
+		return apReduce(arr, reducer, initialValue);
+	}
+
+	/**
+	 * Standard fold without an initial value
 	 * @param reducer {Function} reducer function to apply to each item
 	 * @param arr {Array} list of items
-	 * @return {*} reduce result
+	 * @return {*} fold result
 	 */
-	function reduce(reducer, initialValue, arr) {
-		return apReduce(arr, reducer, initialValue);
+	function fold1(reducer, arr) {
+		return apReduce(arr, reducer);
+	}
+
+	/**
+	 * Standard fold from the right
+	 * @param reducer {Function} reducer function to apply to each item
+	 * @param {*} initialValue initial value for foldr
+	 * @param arr {Array} list of items
+	 * @return {*} fold result
+	 */
+	function foldr(reducer, initialValue, arr) {
+		return apReduceRight(arr, reducer, initialValue);
+	}
+
+	/**
+	 * Standard fold from the right without an initial value
+	 * @param reducer {Function} reducer function to apply to each item
+	 * @param arr {Array} list of items
+	 * @return {*} fold result
+	 */
+	function foldr1(reducer, arr) {
+		return apReduceRight(arr, reducer);
+	}
+
+	/**
+	 * Anamorphic unfold that constructs a list by calling an unspool
+	 * function until donePredicate is true.
+	 * @param  {Function} unspool function to generate next list item and
+	 *  new seed. Must return a list of 2 items: [list value, new seed]
+	 * @param  {Function} donePredicate function that must return true when
+	 *  the unfold is complete
+	 * @param  {*} seed value to pass to first invocation of unspool
+	 * @return {Array} unfolded list
+	 */
+	function unfold(unspool, donePredicate, seed) {
+		var list, result;
+
+		list = [];
+		while(!donePredicate(seed)) {
+			result = unspool(seed);
+
+			list = concat.push(result[0]);
+			seed = result[1];
+		}
+
+		return list;
+	}
+
+	function scan(reducer, initialValue, arr) {
+		var reduced, results;
+
+		results = [];
+		
+		reduced = fold(function(accum) {
+			results.push(accum);
+			return reducer.apply(null, arguments);
+		}, initialValue, arr);
+
+		results.push(reduced);
+
+		return results;
+	}
+
+	function scan1(reducer, arr) {
+		var reduced, results;
+
+		results = [];
+		
+		reduced = fold(function(accum) {
+			results.push(accum);
+			return reducer.apply(null, arguments);
+		}, arr);
+
+		results.push(reduced);
+
+		return results;
+	}
+
+	function scanr(reducer, initialValue, arr) {
+		var reduced, results;
+
+		results = [];
+		
+		reduced = foldr(function(accum) {
+			results.unshift(accum);
+			return reducer.apply(null, arguments);
+		}, initialValue, arr);
+
+		results.unshift(reduced);
+
+		return results;
+	}
+
+	function scanr1(reducer, arr) {
+		var reduced, results;
+
+		results = [];
+		
+		reduced = foldr1(function(accum) {
+			results.unshift(accum);
+			return reducer.apply(null, arguments);
+		}, arr);
+
+		results.unshift(reduced);
+
+		return results;
 	}
 
 	/**
@@ -242,7 +388,7 @@ define(function() {
 	}
 
 	function collate(predicate, arr) {
-		return reduce(function(result, a) {
+		return fold(function(result, a) {
 			result[predicate(a)] = a;
 			return result;
 		}, {}, arr);
@@ -261,7 +407,7 @@ define(function() {
 				return result;
 			};
 
-		return reduce(doFlatten, [], arr);
+		return fold(doFlatten, [], arr);
 	}
 
 	/**
@@ -366,5 +512,5 @@ define(function() {
 		return zipWith.apply(this, concat(defaultZip, list));
 	}
 });
-}(typeof define === 'function' ? define : function(factory) { module.exports = factory(); }));
+}(typeof define === 'function' ? define : function(factory) { module.exports = factory(require); }));
 

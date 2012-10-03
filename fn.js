@@ -20,7 +20,7 @@ define(function() {
 		identity: identity,
 		of: of,
 
-		apply: apply,
+		apply: curry(apply),
 		compose: compose,
 
 		partial: partial,
