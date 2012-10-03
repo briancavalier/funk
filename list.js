@@ -43,6 +43,7 @@ define(function(require) {
 	curryable = {
 		compare: compare,
 		generate: generate,
+		iterate: iterate,
 
 		cons: cons,
 		head: head,
@@ -61,6 +62,7 @@ define(function(require) {
 		findFirst: findFirst,
 		findLast: findLast,
 		concat: concat,
+		join: join,
 
 		fold: fold,
 		fold1: fold1,
@@ -120,6 +122,20 @@ define(function(require) {
 
 		for(i = 0; i < n; i++) {
 			list.push(generator(i));
+		}
+
+		return list;
+	}
+
+	function iterate(fn, x, n) {
+		var list, i;
+
+		list = [x];
+
+		for(i = 1; i < n; i++) {
+			x = fn(x);
+			list.push(x);
+			console.log(x, i, list);
 		}
 
 		return list;
@@ -369,7 +385,7 @@ define(function(require) {
 	 * @return {String} joined String
 	 */
 	function join(separator, list) {
-		return apJoin(separator, list);
+		return apJoin(list, separator);
 	}
 
 	/**
@@ -406,7 +422,7 @@ define(function(require) {
 	 * @return {Array} list of all items except the lsat, or empty list
 	 */
 	function initial(list) {
-		return apSlice(list, 0, length(list) - 1);
+		return apSlice(list, 0, len(list) - 1);
 	}
 
 	/**
@@ -415,12 +431,12 @@ define(function(require) {
 	 * @return {*} last element or undefined
 	 */
 	function last(list) {
-		return list[length(list) - 1];
+		return list[len(list) - 1];
 	}
 
 	/**
 	 * Returns a list of the first n elements of list, or list if
-	 * n > length(list).  Original list is not modified
+	 * n > len(list).  Original list is not modified
 	 * @param  {Number} n number of elements to take
 	 * @param  {Array} list list from which to take
 	 * @return {Array} list of n elements from list
