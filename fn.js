@@ -7,7 +7,12 @@
 (function(define) {
 define(function() {
 
-	var ap, apSlice, apReduce;
+	var ap, apSlice, apReduce, apply, compose, curry, uncurryContext;
+
+	apply = require('./lib/apply');
+	compose = require('./lib/compose');
+	curry = require('./lib/curry');
+	uncurryContext = require('./lib/uncurryContext');
 
 	ap = Array.prototype;
 	apSlice = uncurryContext(ap.slice);
@@ -20,10 +25,10 @@ define(function() {
 		apply: curry(apply),
 		compose: compose,
 
+		flip: flip,
 		partial: partial,
 		curry: curry,
 		curryr: curryr,
-		curryArity: curryArity,
 		uncurryContext: uncurryContext
 	};
 
@@ -48,26 +53,14 @@ define(function() {
 	}
 
 	/**
-	 * Apply function f to x
-	 * @param x {*} value on which to apply f
-	 * @param f {Function} function to apply to x
-	 * @return {*} result of applying f to x
+	 * Returns a function whose argument order is flipped (reversed)
+	 * from the input function.  E.g. flip(f)(x, y) === f(y, x);
+	 * @param  {Function} fn 2-argument function to flip
+	 * @return {Function} 2-argument function whose args are flipped
 	 */
-	function apply(x, f) {
-		return f(x);
-	}
-
-	/**
-	 * Compose two or more functions
-	 * @param f {Function}
-	 * @param g {Function}
-	 * @return {Function}
-	 */
-	function compose(f, g /*, h... */) {
-		var tail = apSlice(arguments, 1);
-
-		return function() {
-			return apReduce(tail, apply, f.apply(null, apSlice(arguments)));
+	function flip(fn) {
+		return function(x, y) {
+			return fn(y, x);
 		};
 	}
 
@@ -93,37 +86,6 @@ define(function() {
 		};
 	}
 
-	/**
-	 * Curry an N-argument function to a series of less-than-N-argument functions
-	 * @param  {Function} fn Function to curry
-	 * @return {Function} curried version of fn
-	 */
-	function curry(fn /*, args... */) {
-		return curryNext(fn, fn.length, apSlice(arguments, 1));
-	}
-
-	/**
-	 * Curry a function, specifying the arity of the function.  Useful in the case
-	 * where the function's length cannot be used because it has undeclared or variable
-	 * params
-	 * @param  {Function} fn    Function to curry
-	 * @param  {Number}   arity Specific arity of the function
-	 * @return {Function} curried version of fn
-	 */
-	function curryArity(fn, arity /*, args... */) {
-		return curryNext(fn, arity, apSlice(arguments, 2));
-	}
-
-	function curryNext(fn, arity, args) {
-		return function() {
-			var accumulated = args.concat(apSlice(arguments));
-
-			return accumulated.length < arity
-				? curryNext(fn, arity, accumulated)
-				: fn.apply(this, accumulated);
-		};
-	}
-
 	function curryr(fn /*, args... */) {
 		return curryrNext(fn, fn.length, apSlice(arguments, 1));
 	}
@@ -133,13 +95,9 @@ define(function() {
 			var accumulated = apSlice(arguments).concat(args);
 
 			return accumulated.length < arity
-				? curryNext(fn, arity, accumulated)
+				? curryrNext(fn, arity, accumulated)
 				: fn.apply(this, accumulated);
 		};
-	}
-
-	function uncurryContext(fn) {
-		return fn.call.bind(fn);
 	}
 
 	function uncurry(f) {

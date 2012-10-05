@@ -8,18 +8,18 @@
 define(function(require) {
 	/*global StopIteration: true*/
 
-	var curryable, f, curry, uncurryContext, name,
+	var curryable, f, flip, curry, uncurryContext, name,
 	ap, apSlice, apForEach, apMap, apReduce, apReduceRight,
 	apFilter, apSome, apEvery, apConcat, apSort, apJoin,
 	stopIteration;
 
 	f = require('./fn');
+	stopIteration = require('./StopIteration');
 
 	// Most every exported function will be curried
+	flip = f.flip;
 	curry = f.curry;
 	uncurryContext = f.uncurryContext;
-
-	stopIteration = typeof StopIteration != 'undefined' ? StopIteration : {};
 
 	// Borrow a bunch of stuff from Array
 	ap = Array.prototype;
@@ -41,9 +41,8 @@ define(function(require) {
 	createList.unzip = unzip;
 
 	curryable = {
-		compare: compare,
 		generate: generate,
-		iterate: iterate,
+		iterator: iterator,
 
 		cons: cons,
 		head: head,
@@ -51,19 +50,22 @@ define(function(require) {
 		initial: initial,
 		last: last,
 
+		concat: apConcat,
+		join: flip(apJoin),
+		flatten: flatten,
+
 		forEach: forEach,
-		map: map,
-		reduce: fold,
-		filter: filter,
-		some: some,
-		every: every,
+		map: flip(apMap),
+		filter: flip(apFilter),
+		some: flip(apSome),
+		every: flip(apEvery),
+
 		indexOf: indexOf,
 		lastIndexOf: lastIndexOf,
 		findFirst: findFirst,
 		findLast: findLast,
-		concat: concat,
-		join: join,
 
+		reduce: fold,
 		fold: fold,
 		fold1: fold1,
 		foldr: foldr,
@@ -75,9 +77,6 @@ define(function(require) {
 		scanr: scanr,
 		scanr1: scanr1,
 
-		sort: sort,
-		unique: unique,
-
 		take: take,
 		takeWhile: takeWhile,
 		drop: drop,
@@ -85,7 +84,9 @@ define(function(require) {
 
 		partition: partition,
 		collate: collate,
-		flatten: flatten,
+
+		sort: sort,
+		unique: unique,
 
 		shuffle: shuffle,
 		sample: sample,
@@ -127,33 +128,33 @@ define(function(require) {
 		return list;
 	}
 
-	function iterate(fn, x, n) {
-		var list, i;
+	/**
+	 * Returns an iterator for the supplied list
+	 * @param  {Array} list
+	 * @return {Function} iterator function
+	 */
+	function iterator(list) {
+		var i, l;
 
-		list = [x];
+		i = 0;
+		l = len(list);
 
-		for(i = 1; i < n; i++) {
-			x = fn(x);
-			list.push(x);
-			console.log(x, i, list);
-		}
-
-		return list;
+		return function() {
+			if(i < l) {
+				return list[i++];
+			}
+			
+			throw stopIteration;
+		};
 	}
 
+	/**
+	 * Returns the number of items in the list
+	 * @param  {Array} list
+	 * @return {Number} number of items in the list
+	 */
 	function len(list) {
 		return list.length;
-	}
-
-	function compare(fn, a, b) {
-		var ac, bc;
-
-		ac = fn(a);
-		bc = fn(b);
-
-		return ac === bc ? 0
-			: ac < bc ? -1
-				: 1;
 	}
 
 	/**
@@ -162,7 +163,8 @@ define(function(require) {
 	 * @param arr {Array} list of items
 	 */
 	function forEach(fn, arr) {
-		return apForEach(arr, fn);
+		apForEach(arr, fn);
+		return arr;
 	}
 
 	/**

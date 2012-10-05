@@ -48,13 +48,6 @@ buster.testCase('list', {
 		}
 	},
 
-	'compare': {
-		'should apply function to both': function() {
-			var c = list.compare(function(x) { return -x; });
-			assert.equals(c(1, -1), -1);
-		}
-	},
-
 	'length': {
 		'should return array length': function() {
 			assert.equals(3, list.len([1, 2, 3]));
