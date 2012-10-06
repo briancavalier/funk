@@ -103,7 +103,7 @@ buster.testCase('list', {
 		}
 	},
 
-	'concat': {
+	'//concat': {
 		'should return empty list when input is empty': function() {
 
 		}
