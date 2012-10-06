@@ -76,6 +76,39 @@ buster.testCase('list', {
 		}
 	},
 
+	'append': {
+		'should append two lists': function() {
+			assert.equals(list.append([1, 2], [3, 4]), [1, 2, 3, 4]);
+		},
+
+		'should return first list when second is empty': function() {
+			var l = [1, 2, 3];
+			assert.equals(list.append(l, []), l);
+		},
+
+		'should return second list when first is empty': function() {
+			var l = [1, 2, 3];
+			assert.equals(list.append([], l), l);
+		},
+
+		'should return empty list when both are empty': function() {
+			assert.equals(list.append([], []), []);
+		},
+
+		'should be associative': function() {
+			assert.equals(
+				list.append(list.append([1, 2], [3, 4]), [5, 6]),
+				list.append([1, 2], list.append([3, 4], [5, 6]))
+			);
+		}
+	},
+
+	'concat': {
+		'should return empty list when input is empty': function() {
+
+		}
+	},
+
 	'head': {
 		'should return undefined when input is empty': function() {
 			refute.defined(list.head([]));

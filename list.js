@@ -35,7 +35,7 @@ define(function(require) {
 	apSort = uncurryContext(ap.sort);
 	apJoin = uncurryContext(ap.join);
 
-	createList.len = len;
+	createList.len = length;
 	createList.zip = zip;
 	createList.zipWith = zipWith;
 	createList.unzip = unzip;
@@ -50,7 +50,8 @@ define(function(require) {
 		initial: initial,
 		last: last,
 
-		concat: apConcat,
+		append: append,
+		concat: concat,
 		join: flip(apJoin),
 		flatten: flatten,
 
@@ -137,7 +138,7 @@ define(function(require) {
 		var i, l;
 
 		i = 0;
-		l = len(list);
+		l = length(list);
 
 		return function() {
 			if(i < l) {
@@ -153,7 +154,7 @@ define(function(require) {
 	 * @param  {Array} list
 	 * @return {Number} number of items in the list
 	 */
-	function len(list) {
+	function length(list) {
 		return list.length;
 	}
 
@@ -253,7 +254,7 @@ define(function(require) {
 
 		results = [];
 		
-		reduced = fold(function(accum) {
+		reduced = fold1(function(accum) {
 			results.push(accum);
 			return reducer.apply(null, arguments);
 		}, arr);
@@ -370,16 +371,6 @@ define(function(require) {
 	}
 
 	/**
-	 * Concatenates the two lists into one new list
-	 * @param  {Array} head
-	 * @param  {Array} tail
-	 * @return {Array} concatenated list
-	 */
-	function concat(head, tail) {
-		return apConcat(head, tail);
-	}
-
-	/**
 	 * Join items from list together to form a String using the
 	 * supplied separator String between each item
 	 * @param  {String|Object} separator String to place between each item
@@ -397,7 +388,26 @@ define(function(require) {
 	 * @return {Array} new list with item prepended
 	 */
 	function cons(item, list) {
-		return concat(createList(item), list);
+		return append(createList(item), list);
+	}
+
+	/**
+	 * Concatenates the two lists into one new list
+	 * @param  {Array} head
+	 * @param  {Array} tail
+	 * @return {Array} concatenated list
+	 */
+	function append(head, tail) {
+		return apConcat(head, tail);
+	}
+
+	/**
+	 * Concatenates all lists in the supplied list of lists
+	 * @param  {Array} lists list of lists
+	 * @return {Array} concatenation of all lists
+	 */
+	function concat(lists) {
+		return fold1(append, lists);
 	}
 
 	/**
@@ -424,7 +434,7 @@ define(function(require) {
 	 * @return {Array} list of all items except the lsat, or empty list
 	 */
 	function initial(list) {
-		return apSlice(list, 0, len(list) - 1);
+		return apSlice(list, 0, length(list) - 1);
 	}
 
 	/**
@@ -433,12 +443,12 @@ define(function(require) {
 	 * @return {*} last element or undefined
 	 */
 	function last(list) {
-		return list[len(list) - 1];
+		return list[length(list) - 1];
 	}
 
 	/**
 	 * Returns a list of the first n elements of list, or list if
-	 * n > len(list).  Original list is not modified
+	 * n > length(list).  Original list is not modified
 	 * @param  {Number} n number of elements to take
 	 * @param  {Array} list list from which to take
 	 * @return {Array} list of n elements from list
@@ -589,23 +599,25 @@ define(function(require) {
 	 * @return {Array} array containing all items from arr in a random order
 	 */
 	function shuffle(arr) {
-		return randomSample(arr.length, arr);
+		return randomSample(length(arr), arr);
 	}
 
 	/**
-	 * Returns a new list containing sampleSize items from arr in random order
+	 * Returns a new list containing sampleSize items from arr in random order.
+	 * Uses Fisher-Yates.
 	 * @param sampleSize {Number} number of items to include in the returned sample
 	 * @param arr {Array} items from which to sample
 	 * @return {Array} array containing sampleSize items from arr in random order
 	 */
 	function randomSample(sampleSize, arr) {
-		var shuffled, i, j, n;
+		var shuffled, i, j, n, len;
 
 		shuffled = [];
+		len = length(arr);
 
-		if(arr.length) {
-			n = Math.min(sampleSize, arr.length);
-			i = 0;
+		if(len) {
+			n = Math.min(sampleSize, len);
+			i = 1;
 
 			shuffled.push(arr[0]);
 
@@ -630,7 +642,7 @@ define(function(require) {
 		var sampled, i, dist, len;
 
 		sampled = [];
-		len = arr.length;
+		len = length(arr);
 		if(len) {
 			sampleSize = Math.min(sampleSize, len);
 
@@ -674,7 +686,7 @@ define(function(require) {
 	}
 
 	function zip(a, b /*, c... */) {
-		return zipWith.apply(this, concat(defaultZip, apSlice(arguments)));
+		return zipWith.apply(this, [defaultZip].concat(apSlice(arguments)));
 	}
 
 	function defaultZip(a /*, b... */) {
@@ -682,7 +694,7 @@ define(function(require) {
 	}
 
 	function unzip(list) {
-		return zipWith.apply(this, concat(defaultZip, list));
+		return zipWith.apply(this, [defaultZip].concat(list));
 	}
 });
 }(typeof define === 'function' ? define : function(factory) { module.exports = factory(require); }));
