@@ -39,10 +39,11 @@ define(function(require) {
 	createList.zip = zip;
 	createList.zipWith = zipWith;
 	createList.unzip = unzip;
+	createList.iterator = iterator;
+	createList.riterator = reverseIterator;
 
 	curryable = {
 		generate: generate,
-		iterator: iterator,
 
 		cons: cons,
 		head: head,
@@ -118,6 +119,7 @@ define(function(require) {
 	 * @return {Array} list of n items
 	 */
 	function generate(generator, n) {
+		// Note: can be implemented using unfold, but this will be faster
 		var list, i;
 
 		list = [];
@@ -130,9 +132,34 @@ define(function(require) {
 	}
 
 	/**
+	 * Anamorphic unfold that constructs a list by calling an unspool
+	 * function until donePredicate is true.
+	 * @param  {Function} unspool function to generate next list item and
+	 *  new seed. Must return a list of 2 items: [list value, new seed]
+	 * @param  {Function} donePredicate function that must return true when
+	 *  the unfold is complete
+	 * @param  {*} seed value to pass to first invocation of unspool
+	 * @return {Array} unfolded list
+	 */
+	function unfold(unspool, donePredicate, seed) {
+		var list, result;
+
+		list = [];
+
+		while(!donePredicate(seed)) {
+			result = unspool(seed);
+
+			list.push(result[0]);
+			seed = result[1];
+		}
+
+		return list;
+	}
+
+	/**
 	 * Returns an iterator for the supplied list
 	 * @param  {Array} list
-	 * @return {Function} iterator function
+	 * @return {Function} iterator
 	 */
 	function iterator(list) {
 		var i, l;
@@ -142,9 +169,30 @@ define(function(require) {
 
 		return function() {
 			if(i < l) {
-				return list[i++];
+				++i;
+				return list[i];
 			}
 			
+			throw stopIteration;
+		};
+	}
+
+	/**
+	 * Returns an iterator that iterates in reverse order over the supplied
+	 * list.
+	 * @param  {Array} list
+	 * @return {Function} iterator
+	 */
+	function reverseIterator(list) {
+		var i;
+
+		i = length(list);
+		return function() {
+			if(i > 0) {
+				--i;
+				return list[i];
+			}
+
 			throw stopIteration;
 		};
 	}
@@ -208,30 +256,6 @@ define(function(require) {
 	 */
 	function foldr1(reducer, arr) {
 		return apReduceRight(arr, reducer);
-	}
-
-	/**
-	 * Anamorphic unfold that constructs a list by calling an unspool
-	 * function until donePredicate is true.
-	 * @param  {Function} unspool function to generate next list item and
-	 *  new seed. Must return a list of 2 items: [list value, new seed]
-	 * @param  {Function} donePredicate function that must return true when
-	 *  the unfold is complete
-	 * @param  {*} seed value to pass to first invocation of unspool
-	 * @return {Array} unfolded list
-	 */
-	function unfold(unspool, donePredicate, seed) {
-		var list, result;
-
-		list = [];
-		while(!donePredicate(seed)) {
-			result = unspool(seed);
-
-			list = concat.push(result[0]);
-			seed = result[1];
-		}
-
-		return list;
 	}
 
 	function scan(reducer, initialValue, arr) {
@@ -407,7 +431,10 @@ define(function(require) {
 	 * @return {Array} concatenation of all lists
 	 */
 	function concat(lists) {
-		return fold1(append, lists);
+		// Could be this:
+		// return fold(append, [], lists);
+		// But leveraging builtin concat is *much* faster:
+		return ap.concat.apply([], lists);
 	}
 
 	/**
@@ -532,7 +559,7 @@ define(function(require) {
 					index = i;
 					throw stopIteration;
 				}
-			});
+			}, void 0);
 		} catch(e) {
 			if(e !== stopIteration) {
 				throw e;
@@ -572,7 +599,16 @@ define(function(require) {
 
 	function collate(predicate, arr) {
 		return fold(function(result, a) {
-			result[predicate(a)] = a;
+			var key, list;
+
+			key = predicate(a);
+			list = result[key];
+			if(!list) {
+				result[key] = list = [a];
+			} else {
+				list.push(a);
+			}
+
 			return result;
 		}, {}, arr);
 	}

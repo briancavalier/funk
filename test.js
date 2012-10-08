@@ -1,13 +1,13 @@
 var fn = require('./fn');
 var list = require('./list');
 var iterator = require('./iterator');
+var result;
+var i, l1, l2, l3;
 
-var next = list.iterator(list(1, 2, 3));
+l1 = list.generate(list.generate(fn.identity), 100);
 
-next = fn.compose(
-	iterator.filter(function(x) { return x < 5; }),
-	iterator.map(function(x) { return x * 2; })
-)(next);
-// next = iterator.filter(function(x) { return x < 5; }, iterator.map(function(x) { return x * 2; }, next));
-
-iterator.each(console.log.bind(console), next);
+var start = Date.now();
+for(i = 0;i < 10000; i++) {
+	result = list.concat(l1);
+}
+console.log(Date.now() - start);

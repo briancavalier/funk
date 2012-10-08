@@ -12,6 +12,8 @@ define(function(require) {
 	exports = {
 		recurse: recurse,
 
+		append: append,
+
 		map: map,
 		filter: filter,
 		fold: fold,
@@ -40,6 +42,8 @@ define(function(require) {
 	exports.cycle = cycle;
 	exports.generate = generate;
 
+	exports.concat = concat;
+
 	exports.fold = fold;
 	exports.scan = scan;
 
@@ -47,6 +51,22 @@ define(function(require) {
 	exports.unzip = unzip;
 
 	return exports;
+
+	function empty() {
+		throw stopIteration;
+	}
+
+	function once(x) {
+		var done = false;
+		return function() {
+			if(done) {
+				throw stopIteration;
+			}
+
+			done = true;
+			return x;
+		};
+	}
 
 	function repeat(x) {
 		return function() {
@@ -82,6 +102,7 @@ define(function(require) {
 			} catch(e) {
 				if(e === stopIteration && iter === iter1) {
 					iter = iter2;
+					return iter();
 				} else {
 					throw e;
 				}
@@ -90,7 +111,7 @@ define(function(require) {
 	}
 
 	function concat(iters) {
-		// TODO: traverse each iter returned by iters
+		return fold(append, empty, iters);
 	}
 
 	function map(mapFunc, iter) {
@@ -111,10 +132,11 @@ define(function(require) {
 
 	function fold(reducer, initialValue, iter) {
 		var result = initialValue;
-		return compose(iter, function(x) {
-			result = reducer(result, x);
-			return result;
-		});
+		each(function(iter) {
+			result = reducer(result, iter);
+		}, iter);
+
+		return result;
 	}
 
 	function fold1(reducer, iter) {
@@ -137,9 +159,11 @@ define(function(require) {
 	}
 
 	function scan(reducer, initialValue, iter) {
-		return fold(function(accum, val) {
-			return accum.concat(val);
-		}, [initialValue], iter);
+		var result = initialValue;
+		return compose(iter, function(x) {
+			result = reducer(result, x);
+			return result;
+		});
 	}
 
 	function list(iter) {
@@ -151,22 +175,24 @@ define(function(require) {
 
 	function take(n, iter) {
 		return function() {
-			if(n === 0) {
+			n -= 1;
+			if(n < 0) {
 				throw stopIteration;
 			}
 
-			n -= 1;
 			return iter();
 		};
 	}
 
 	function drop(n, iter) {
 		return function() {
-			if(n === 0) {
-				return iter();
+			// Immediately drop n items
+			while(n > 0) {
+				iter();
+				n -= 1;
 			}
 
-			n -= 1;
+			return iter();
 		};
 	}
 

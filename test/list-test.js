@@ -22,6 +22,14 @@ function isDense(arr, len) {
 	return dense && (i - 1) === len;
 }
 
+function alwaysTrue() {
+	return true;
+}
+
+function alwaysFalse() {
+	return false;
+}
+
 testArray = (function(n) {
 	for(var array = [], i = 0; i<n; i++) {
 		array.push(i);
@@ -103,10 +111,19 @@ buster.testCase('list', {
 		}
 	},
 
-	'//concat': {
+	'concat': {
 		'should return empty list when input is empty': function() {
+			assert.equals(list.concat([]), []);
+		},
 
+		'should return empty list when all lists are empty': function() {
+			assert.equals(list.concat([[], [], []]), []);
+		},
+
+		'should return concatenate 2 lists': function() {
+			assert.equals(list.concat([[1], [2]]), [1, 2]);
 		}
+
 	},
 
 	'head': {
@@ -154,6 +171,48 @@ buster.testCase('list', {
 
 		'should return all but last item': function() {
 			assert.equals(list.initial([1, 2, 3]), [1, 2]);
+		}
+	},
+
+	'findFirst': {
+		'should return undefined for empty list': function() {
+			refute.defined(list.findFirst(alwaysTrue, []));
+		},
+
+		'should return undefined when not found': function() {
+			refute.defined(list.findFirst(alwaysFalse, [1, 2, 3]));
+		},
+
+		'should return first found item': function() {
+			var a1, a2;
+
+			a1 = { a: true };
+			a2 = { a: true };
+
+			assert.same(list.findFirst(function(x) {
+				return x.a === true;
+			}, [1, 2, a1, a2, 3, 4]), a1);
+		}
+	},
+
+	'findLast': {
+		'should return undefined for empty list': function() {
+			refute.defined(list.findLast(alwaysTrue, []));
+		},
+
+		'should return undefined when not found': function() {
+			refute.defined(list.findLast(alwaysFalse, [1, 2, 3]));
+		},
+
+		'should return first found item': function() {
+			var a1, a2;
+
+			a1 = { a: true };
+			a2 = { a: true };
+
+			assert.same(list.findLast(function(x) {
+				return x.a === true;
+			}, [1, 2, a1, a2, 3, 4]), a2);
 		}
 	},
 
